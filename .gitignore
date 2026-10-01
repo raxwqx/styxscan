@@ -7,3 +7,5 @@ __pycache__/
 
 report.html
 result.json
+
+*.v0.1-backup
