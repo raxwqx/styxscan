@@ -1,8 +1,10 @@
 # 🕷️ StyxScan
 
-> Lightweight HTTP & TLS reconnaissance tool for security testing.
+> Lightweight HTTP, TLS, DNS & Security Reconnaissance Toolkit.
 
-**StyxScan** is a lightweight Python-based reconnaissance tool designed to collect useful HTTP, HTTPS, DNS, TLS, and redirect information from a target.
+**StyxScan** is a lightweight Python-based security research toolkit designed to collect and analyze publicly accessible information from web targets.
+
+It performs passive reconnaissance across HTTP/HTTPS, security headers, cookies, CORS, TLS, DNS, redirects, and basic technology detection.
 
 Built for security researchers, penetration testers, and curious hackers.
 
@@ -10,17 +12,83 @@ Built for security researchers, penetration testers, and curious hackers.
 
 ## ⚡ Features
 
-* 🌐 HTTP / HTTPS information gathering
-* 🔐 TLS certificate inspection
-* 🔎 DNS resolution
-* ↪️ Redirect history tracking
-* ⏱️ Configurable request timeout
-* 📄 JSON output
-* 🌐 HTML report generation
-* 🚫 Disable DNS resolution with `--no-dns`
-* 🚫 Disable TLS inspection with `--no-tls`
-* 🧪 Automated test suite
-* 🐍 Python-based and lightweight CLI
+### 🌐 HTTP / HTTPS
+
+* HTTP status code detection
+* Final URL detection
+* Response header analysis
+* Server detection
+* `X-Powered-By` detection
+* Redirect history tracking
+* Configurable request timeout
+
+### 🛡️ Security Analysis
+
+* Security header analysis
+* HSTS detection
+* Content Security Policy detection
+* CSP Report-Only detection
+* `X-Content-Type-Options` detection
+* `X-Frame-Options` detection
+* `Referrer-Policy` detection
+* `Permissions-Policy` detection
+* Cookie security analysis
+* CORS analysis
+* Security findings
+* Severity-based security summary
+
+### 🍪 Cookie Analysis
+
+StyxScan analyzes common cookie security attributes, including:
+
+* `Secure`
+* `HttpOnly`
+* `SameSite`
+
+### 🔐 TLS Inspection
+
+* TLS version
+* Cipher suite
+* Certificate subject
+* Certificate issuer
+* Certificate issue date
+* Certificate expiration date
+* Remaining certificate lifetime
+
+### 🌍 DNS Reconnaissance
+
+StyxScan can inspect:
+
+* A records
+* AAAA records
+* MX records
+* NS records
+* TXT records
+* SPF
+* DMARC
+* DNSSEC / DNSKEY indicators
+
+### ↪️ Redirect Analysis
+
+StyxScan tracks HTTP redirects and displays:
+
+* Redirect status codes
+* Redirect URLs
+* Final destination
+* Number of redirects
+
+### 🧬 Technology Detection
+
+Basic technology fingerprinting based on publicly accessible HTTP information.
+
+### 📊 Reporting
+
+StyxScan provides:
+
+* Rich terminal output
+* JSON output
+* HTML report generation
+* Security findings with severity levels
 
 ---
 
@@ -33,13 +101,13 @@ git clone https://github.com/raxwqx/styxscan.git
 cd styxscan
 ```
 
-Install dependencies:
+Install the dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Or install the project with:
+Or install the project directly:
 
 ```bash
 pip install .
@@ -49,70 +117,132 @@ pip install .
 
 ## 🚀 Usage
 
-Basic scan:
+### Basic Scan
 
 ```bash
-python styxscan.py https://example.com
+python -m styxscan https://example.com
 ```
 
-Disable DNS resolution:
+### Show Help
 
 ```bash
-python styxscan.py https://example.com --no-dns
+python -m styxscan --help
 ```
 
-Disable TLS inspection:
+### Custom Timeout
+
+Set the HTTP request timeout in seconds:
 
 ```bash
-python styxscan.py https://example.com --no-tls
+python -m styxscan https://example.com --timeout 10
 ```
 
-Set a custom timeout:
+### Disable DNS Analysis
 
 ```bash
-python styxscan.py https://example.com --timeout 10
+python -m styxscan https://example.com --no-dns
 ```
 
-Generate JSON output:
+### Disable TLS Inspection
 
 ```bash
-python styxscan.py https://example.com --json
+python -m styxscan https://example.com --no-tls
 ```
 
-Generate an HTML report:
+### JSON Output
+
+Generate machine-readable JSON output:
 
 ```bash
-python styxscan.py https://example.com --html
+python -m styxscan https://example.com --json
+```
+
+### HTML Report
+
+Generate an HTML security report:
+
+```bash
+python -m styxscan https://example.com --html report.html
 ```
 
 ---
 
-## 📊 Information Collected
+## 📊 Example
 
-Depending on the target and enabled options, StyxScan can collect:
+Example terminal output:
 
-* Target URL
-* HTTP status code
-* Response headers
-* Server information
-* Redirect history
-* DNS information
-* TLS certificate information
-* TLS version
-* Connection details
-* Response timing
+```text
+STYXSCAN v0.1
+Security Research Toolkit
+
+Target       https://example.com
+Status       200
+Final URL    https://example.com/
+Server       Example
+
+Security Overview
+
+Security Headers    REVIEW
+TLS                 VALID
+DNS Records         OK
+DNS Security        REVIEW
+Cookies             OK
+CORS                OK
+
+Security Summary
+
+CRITICAL    0
+HIGH        0
+MEDIUM      0
+LOW         0
+INFO        0
+TOTAL       0
+```
+
+> Results depend on the target's HTTP response, DNS configuration, TLS configuration, and enabled scan options.
+
+---
+
+## 🔎 Security Findings
+
+StyxScan performs passive security checks against publicly accessible information.
+
+Example findings may include:
+
+```text
+MEDIUM   HSTS is missing
+MEDIUM   CSP is missing
+LOW      X-Content-Type-Options is missing
+LOW      Referrer-Policy is missing
+LOW      Permissions-Policy is missing
+LOW      Cookie is missing Secure
+LOW      Cookie is missing HttpOnly
+LOW      Cookie has no SameSite attribute
+```
+
+Findings use the following severity levels:
+
+```text
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
+```
+
+> A finding is a security observation and does not necessarily mean that the target contains an exploitable vulnerability.
 
 ---
 
 ## 🧪 Testing
 
-Run the test suite with:
+Run the automated test suite with:
 
 ```bash
 pytest
 ```
 
-The project includes automated tests covering the core functionality of StyxScan.
+The project includes tests covering the core functionality of StyxScan.
 
 ---
 
@@ -120,14 +250,41 @@ The project includes automated tests covering the core functionality of StyxScan
 
 ```text
 styxscan/
-├── styxscan.py
-├── pyproject.toml
-├── requirements.txt
+├── styxscan/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── http.py
+│   ├── headers.py
+│   ├── cookies.py
+│   ├── cors.py
+│   ├── dns.py
+│   ├── tls.py
+│   ├── technology.py
+│   ├── findings.py
+│   ├── reporter.py
+│   └── html_reporter.py
+│
 ├── tests/
 │   └── ...
-├── .gitignore
+│
+├── pyproject.toml
+├── requirements.txt
+├── LICENSE
 └── README.md
 ```
+
+---
+
+## 🧠 Design Philosophy
+
+StyxScan is designed around **passive reconnaissance**.
+
+The tool focuses on information that can be obtained through normal HTTP/HTTPS requests and DNS/TLS inspection.
+
+It does not attempt to exploit vulnerabilities or modify the target system.
+
+The goal is to provide a lightweight overview of a target's externally observable security posture.
 
 ---
 
@@ -145,15 +302,14 @@ The author is not responsible for misuse or damage caused by this tool.
 
 This project is licensed under the **MIT License**.
 
-See the `LICENSE` file for details.
+See the [`LICENSE`](LICENSE) file for details.
 
 ---
 
-## 🕸️ Project
+## 🕷️ Project
 
 **StyxScan v0.1.0**
 
 Developed by **raxwqx**
 
-GitHub:
-https://github.com/raxwqx/styxscan
+GitHub: https://github.com/raxwqx/styxscan
