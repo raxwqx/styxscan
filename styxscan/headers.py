@@ -12,9 +12,19 @@ def analyze(headers):
     results = []
 
     for header, name in SECURITY_HEADERS.items():
-        results.append({
+        present = header in headers
+
+        result = {
             "name": name,
-            "present": header in headers,
-        })
+            "present": present,
+        }
+
+        if name == "CSP":
+            result["report_only"] = (
+                "Content-Security-Policy-Report-Only"
+                in headers
+            )
+
+        results.append(result)
 
     return results

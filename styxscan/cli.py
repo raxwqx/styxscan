@@ -106,7 +106,7 @@ def main():
                 f"{http_result['error']}"
             )
 
-        return
+        return 1
 
     header_result = analyze(
         http_result.get(
@@ -226,7 +226,7 @@ def main():
                 indent=2,
             )
         )
-        return
+        return 0
 
     if args.html:
         try:
@@ -250,4 +250,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

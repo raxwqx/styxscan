@@ -96,7 +96,7 @@ def test_main_json_output(monkeypatch, capsys):
         ],
     )
 
-    cli.main()
+    assert cli.main() == 0 
 
     output = capsys.readouterr().out
 

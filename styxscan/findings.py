@@ -21,18 +21,31 @@ def analyze_headers(headers):
     findings = []
 
     for header in headers:
-        if not header["present"]:
-            name = header["name"]
+        name = header["name"]
 
-            findings.append({
-                "type": "security-header",
-                "name": name,
-                "severity": HEADER_SEVERITY.get(
-                    name,
-                    "INFO",
-                ),
-                "message": f"{name} is missing",
-            })
+        if header["present"]:
+            continue
+
+        if (
+            name == "CSP"
+            and header.get("report_only")
+        ):
+            message = (
+                "CSP is missing "
+                "(CSP Report-Only is present)"
+            )
+        else:
+            message = f"{name} is missing"
+
+        findings.append({
+            "type": "security-header",
+            "name": name,
+            "severity": HEADER_SEVERITY.get(
+                name,
+                "INFO",
+            ),
+            "message": message,
+        })
 
     return findings
 
