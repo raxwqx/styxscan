@@ -15,6 +15,8 @@ Built for security researchers, penetration testers, and curious hackers.
 - HTTP response bodies are capped at 1 MiB in memory; reports state when content was truncated.
 - TLS inspection is skipped for plain HTTP URLs and uses the configured timeout.
 
+The body cap applies while streaming the response and the response is closed after scanning. `--timeout` controls both HTTP and HTTPS/TLS connection attempts; an `http://` target does not open a TLS socket.
+
 
 ### 🌐 HTTP / HTTPS
 

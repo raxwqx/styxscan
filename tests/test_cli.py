@@ -70,7 +70,7 @@ def test_main_json_output(monkeypatch, capsys):
     monkeypatch.setattr(
         cli,
         "inspect",
-        lambda target: {
+        lambda target, timeout=10: {
             "version": "TLSv1.3",
             "cipher": "TEST-CIPHER",
             "subject": "example.com",
@@ -173,7 +173,7 @@ def test_main_no_dns(monkeypatch):
     monkeypatch.setattr(
         cli,
         "inspect",
-        lambda target: {
+        lambda target, timeout=10: {
             "version": "TLSv1.3",
             "cipher": "TEST-CIPHER",
             "subject": "example.com",
@@ -339,7 +339,7 @@ def test_timeout_is_passed_to_fetch(monkeypatch):
     monkeypatch.setattr(
         cli,
         "inspect",
-        lambda target: {
+        lambda target, timeout=10: {
             "version": "TLSv1.3",
             "cipher": "TEST-CIPHER",
             "subject": "example.com",

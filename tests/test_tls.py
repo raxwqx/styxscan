@@ -87,3 +87,12 @@ def test_tls_inspect_error(monkeypatch):
 
     assert "error" in result
     assert "connection failed" in result["error"]
+
+
+def test_tls_is_skipped_for_plain_http_without_opening_socket(monkeypatch):
+    monkeypatch.setattr(tls.socket, "create_connection", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("must not connect")))
+
+    result = tls.inspect("http://example.com")
+
+    assert result["skipped"] is True
+    assert "requires an HTTPS URL" in result["reason"]

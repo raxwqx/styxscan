@@ -1,6 +1,7 @@
 import requests
 
 from styxscan.http import fetch
+from styxscan.http import MAX_RESPONSE_BYTES
 
 
 def test_fetch_success(monkeypatch):
@@ -129,6 +130,33 @@ def test_fetch_timeout(monkeypatch):
     )
 
     assert captured["timeout"] == 25
+
+
+def test_fetch_caps_streamed_body_and_closes_response(monkeypatch):
+    class FakeResponse:
+        status_code = 200
+        url = "https://example.com/"
+        headers = {}
+        history = []
+        encoding = "utf-8"
+        closed = False
+
+        def iter_content(self, chunk_size):
+            assert chunk_size > 0
+            yield b"x" * (MAX_RESPONSE_BYTES + 17)
+
+        def close(self):
+            self.closed = True
+
+    response = FakeResponse()
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
+
+    result = fetch("https://example.com")
+
+    assert result["content_bytes"] == MAX_RESPONSE_BYTES
+    assert len(result["content"].encode("utf-8")) == MAX_RESPONSE_BYTES
+    assert result["content_truncated"] is True
+    assert response.closed is True
 
 
 def test_fetch_multiple_set_cookie_headers(
