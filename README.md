@@ -12,6 +12,10 @@ Built for security researchers, penetration testers, and curious hackers.
 
 ## ⚡ Features
 
+- HTTP response bodies are capped at 1 MiB in memory; reports state when content was truncated.
+- TLS inspection is skipped for plain HTTP URLs and uses the configured timeout.
+
+
 ### 🌐 HTTP / HTTPS
 
 * HTTP status code detection
@@ -308,7 +312,7 @@ See the [`LICENSE`](LICENSE) file for details.
 
 ## 🕷️ Project
 
-**StyxScan v0.1.0**
+**StyxScan v5.0.0**
 
 Developed by **raxwqx**
 
