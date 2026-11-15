@@ -151,7 +151,8 @@ def main():
 
     else:
         tls_result = inspect(
-            target
+            target,
+            timeout=args.timeout,
         )
 
     findings = analyze_headers(
