@@ -133,3 +133,68 @@ def test_no_cookie():
 
     assert result["cookies"] == []
     assert result["findings"] == []
+
+
+def test_samesite_none_without_secure_is_high_severity():
+    result = analyze(
+        {
+            "set_cookie": [
+                "session=abc; HttpOnly; SameSite=None",
+            ],
+            "headers": {},
+        }
+    )
+
+    assert any(
+        finding["severity"] == "HIGH"
+        and "SameSite=None" in finding["message"]
+        for finding in result["findings"]
+    )
+
+
+def test_host_prefix_rules_are_enforced():
+    result = analyze(
+        {
+            "set_cookie": [
+                "__Host-session=abc; Secure; HttpOnly; SameSite=Lax",
+            ],
+            "headers": {},
+        }
+    )
+
+    assert any(
+        finding["severity"] == "HIGH"
+        and "__Host-" in finding["message"]
+        and "Path=/" in finding["message"]
+        for finding in result["findings"]
+    )
+
+
+def test_secure_prefix_requires_secure():
+    result = analyze(
+        {
+            "set_cookie": [
+                "__Secure-session=abc; HttpOnly; SameSite=Lax",
+            ],
+            "headers": {},
+        }
+    )
+
+    assert any(
+        finding["severity"] == "HIGH"
+        and "__Secure-" in finding["message"]
+        for finding in result["findings"]
+    )
+
+
+def test_cookie_lookup_is_case_insensitive():
+    result = analyze(
+        {
+            "headers": {
+                "set-cookie": "session=abc; Secure; HttpOnly; SameSite=Lax",
+            }
+        }
+    )
+
+    assert len(result["cookies"]) == 1
+    assert result["findings"] == []

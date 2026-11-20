@@ -1,196 +1,252 @@
-def analyze(http_result):
-    technologies = []
+"""Technology fingerprinting from HTTP responses."""
 
-    headers = {
-        key.lower(): value
-        for key, value in http_result.get(
-            "headers",
-            {}
-        ).items()
-    }
+from __future__ import annotations
 
-    content = http_result.get(
-        "content",
-        ""
-    )
+import re
 
-    server = headers.get(
-        "server",
-        ""
-    )
+from .headers import get_header
 
-    powered_by = headers.get(
-        "x-powered-by",
-        ""
-    )
+_HTML_PATTERNS = (
+    (
+        "WordPress",
+        "CMS",
+        "high",
+        re.compile(r"wp-(?:content|includes)/", re.IGNORECASE),
+        "HTML references WordPress asset paths",
+    ),
+    (
+        "Joomla",
+        "CMS",
+        "medium",
+        re.compile(r"joomla|/media/system/js/", re.IGNORECASE),
+        "HTML contains a Joomla fingerprint",
+    ),
+    (
+        "Drupal",
+        "CMS",
+        "high",
+        re.compile(r"drupal-settings-json", re.IGNORECASE),
+        "HTML contains drupal-settings-json",
+    ),
+    (
+        "Next.js",
+        "Framework",
+        "high",
+        re.compile(r"__next_data__|/_next/static/", re.IGNORECASE),
+        "HTML contains a Next.js fingerprint",
+    ),
+    (
+        "React",
+        "JavaScript Framework",
+        "medium",
+        re.compile(
+            r"/react(?:\.production|\.development)?(?:\.min)?\.js"
+            r"|data-reactroot|react-dom",
+            re.IGNORECASE,
+        ),
+        "HTML contains a React fingerprint",
+    ),
+    (
+        "Vue.js",
+        "JavaScript Framework",
+        "medium",
+        re.compile(
+            r"vue(?:\.global|\.min)?\.js|data-v-[0-9a-f]{8}"
+            r"|v-cloak|data-v-app",
+            re.IGNORECASE,
+        ),
+        "HTML contains a Vue fingerprint",
+    ),
+    (
+        "Angular",
+        "JavaScript Framework",
+        "medium",
+        re.compile(
+            r"angular(?:\.min)?\.js|ng-version=|app-root",
+            re.IGNORECASE,
+        ),
+        "HTML contains an Angular fingerprint",
+    ),
+    (
+        "jQuery",
+        "JavaScript Library",
+        "medium",
+        re.compile(
+            r"jquery(?:-[\d.]+)?(?:\.min)?\.js",
+            re.IGNORECASE,
+        ),
+        "HTML contains a jQuery fingerprint",
+    ),
+    (
+        "Bootstrap",
+        "CSS Framework",
+        "medium",
+        re.compile(
+            r"bootstrap(?:\.bundle)?(?:\.min)?\.(?:css|js)",
+            re.IGNORECASE,
+        ),
+        "HTML contains a Bootstrap fingerprint",
+    ),
+    (
+        "Tailwind CSS",
+        "CSS Framework",
+        "medium",
+        re.compile(r"tailwind(?:css)?", re.IGNORECASE),
+        "HTML contains a Tailwind fingerprint",
+    ),
+    (
+        "Laravel",
+        "Framework",
+        "medium",
+        re.compile(r"laravel_session|laravel", re.IGNORECASE),
+        "HTML contains a Laravel fingerprint",
+    ),
+    (
+        "Django",
+        "Framework",
+        "medium",
+        re.compile(r"csrfmiddlewaretoken|django", re.IGNORECASE),
+        "HTML contains a Django fingerprint",
+    ),
+)
 
-    server_lower = server.lower()
-    powered_lower = powered_by.lower()
-    content_lower = content.lower()
 
-    # Web Server / Proxy detection
+def _add(technologies: list[dict], seen: set[str], technology: dict) -> None:
+    name = technology["name"]
+    if name in seen:
+        return
+    seen.add(name)
+    technologies.append(technology)
+
+
+def analyze(http_result: dict) -> dict:
+    """Fingerprint common servers, runtimes, and frontend frameworks.
+
+    Patterns are deliberately narrow. Substring checks such as ``"vue" in
+    html`` match ordinary words like ``value`` or ``reaction`` and are not
+    used here.
+    """
+
+    technologies: list[dict] = []
+    seen: set[str] = set()
+
+    headers = http_result.get("headers", {}) or {}
+    server = get_header(headers, "Server", "") or ""
+    powered_by = get_header(headers, "X-Powered-By", "") or ""
+
+    server_lower = str(server).lower()
+    powered_lower = str(powered_by).lower()
+
     if "cloudflare" in server_lower:
-        technologies.append({
-            "name": "Cloudflare",
-            "category": "CDN / Proxy",
-            "confidence": "high",
-            "evidence": f"Server: {server}",
-        })
-
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "Cloudflare",
+                "category": "CDN / Proxy",
+                "confidence": "high",
+                "evidence": f"Server: {server}",
+            },
+        )
     elif "nginx" in server_lower:
-        technologies.append({
-            "name": "Nginx",
-            "category": "Web Server",
-            "confidence": "high",
-            "evidence": f"Server: {server}",
-        })
-
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "Nginx",
+                "category": "Web Server",
+                "confidence": "high",
+                "evidence": f"Server: {server}",
+            },
+        )
+    elif "openresty" in server_lower:
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "OpenResty",
+                "category": "Web Server",
+                "confidence": "high",
+                "evidence": f"Server: {server}",
+            },
+        )
     elif "apache" in server_lower:
-        technologies.append({
-            "name": "Apache",
-            "category": "Web Server",
-            "confidence": "high",
-            "evidence": f"Server: {server}",
-        })
-
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "Apache",
+                "category": "Web Server",
+                "confidence": "high",
+                "evidence": f"Server: {server}",
+            },
+        )
     elif "microsoft-iis" in server_lower:
-        technologies.append({
-            "name": "Microsoft IIS",
-            "category": "Web Server",
-            "confidence": "high",
-            "evidence": f"Server: {server}",
-        })
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "Microsoft IIS",
+                "category": "Web Server",
+                "confidence": "high",
+                "evidence": f"Server: {server}",
+            },
+        )
 
-    # Powered By detection
     if "php" in powered_lower:
-        technologies.append({
-            "name": "PHP",
-            "category": "Runtime",
-            "confidence": "high",
-            "evidence": f"X-Powered-By: {powered_by}",
-        })
-
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "PHP",
+                "category": "Runtime",
+                "confidence": "high",
+                "evidence": f"X-Powered-By: {powered_by}",
+            },
+        )
     elif "express" in powered_lower:
-        technologies.append({
-            "name": "Express",
-            "category": "Framework",
-            "confidence": "high",
-            "evidence": f"X-Powered-By: {powered_by}",
-        })
-
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "Express",
+                "category": "Framework",
+                "confidence": "high",
+                "evidence": f"X-Powered-By: {powered_by}",
+            },
+        )
     elif "asp.net" in powered_lower:
-        technologies.append({
-            "name": "ASP.NET",
-            "category": "Framework",
-            "confidence": "high",
-            "evidence": f"X-Powered-By: {powered_by}",
-        })
+        _add(
+            technologies,
+            seen,
+            {
+                "name": "ASP.NET",
+                "category": "Framework",
+                "confidence": "high",
+                "evidence": f"X-Powered-By: {powered_by}",
+            },
+        )
 
-    # HTML technology detection
+    content_type = http_result.get("content_type")
+    content = http_result.get("content", "") or ""
+    if content_type and not any(
+        marker in str(content_type).lower()
+        for marker in ("text/html", "application/xhtml+xml", "text/plain")
+    ):
+        content = ""
 
-    if "wp-content/" in content_lower:
-        technologies.append({
-            "name": "WordPress",
-            "category": "CMS",
-            "confidence": "high",
-            "evidence": "HTML contains wp-content/",
-        })
-
-    elif "wp-includes/" in content_lower:
-        technologies.append({
-            "name": "WordPress",
-            "category": "CMS",
-            "confidence": "high",
-            "evidence": "HTML contains wp-includes/",
-        })
-
-    if "joomla" in content_lower:
-        technologies.append({
-            "name": "Joomla",
-            "category": "CMS",
-            "confidence": "medium",
-            "evidence": "HTML contains Joomla fingerprint",
-        })
-
-    if "drupal-settings-json" in content_lower:
-        technologies.append({
-            "name": "Drupal",
-            "category": "CMS",
-            "confidence": "high",
-            "evidence": "HTML contains drupal-settings-json",
-        })
-
-    if "__next_data__" in content_lower:
-        technologies.append({
-            "name": "Next.js",
-            "category": "Framework",
-            "confidence": "high",
-            "evidence": "HTML contains __NEXT_DATA__",
-        })
-
-    if "react" in content_lower:
-        technologies.append({
-            "name": "React",
-            "category": "JavaScript Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains React fingerprint",
-        })
-
-    if "vue" in content_lower:
-        technologies.append({
-            "name": "Vue.js",
-            "category": "JavaScript Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Vue fingerprint",
-        })
-
-    if "angular" in content_lower:
-        technologies.append({
-            "name": "Angular",
-            "category": "JavaScript Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Angular fingerprint",
-        })
-
-    if "jquery" in content_lower:
-        technologies.append({
-            "name": "jQuery",
-            "category": "JavaScript Library",
-            "confidence": "medium",
-            "evidence": "HTML contains jQuery fingerprint",
-        })
-
-    if "bootstrap" in content_lower:
-        technologies.append({
-            "name": "Bootstrap",
-            "category": "CSS Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Bootstrap fingerprint",
-        })
-
-    if "tailwind" in content_lower:
-        technologies.append({
-            "name": "Tailwind CSS",
-            "category": "CSS Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Tailwind fingerprint",
-        })
-
-    if "laravel" in content_lower:
-        technologies.append({
-            "name": "Laravel",
-            "category": "Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Laravel fingerprint",
-        })
-
-    if "django" in content_lower:
-        technologies.append({
-            "name": "Django",
-            "category": "Framework",
-            "confidence": "medium",
-            "evidence": "HTML contains Django fingerprint",
-        })
+    for name, category, confidence, pattern, evidence in _HTML_PATTERNS:
+        if pattern.search(content):
+            _add(
+                technologies,
+                seen,
+                {
+                    "name": name,
+                    "category": category,
+                    "confidence": confidence,
+                    "evidence": evidence,
+                },
+            )
 
     return {
         "technologies": technologies,

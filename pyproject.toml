@@ -4,21 +4,57 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "styxscan"
-version = "0.1.0"
-description = "Security Research Toolkit"
+version = "0.2.0"
+description = "Lightweight HTTP, TLS, DNS, and security reconnaissance toolkit"
+readme = "README.md"
 requires-python = ">=3.10"
-
-dependencies = [
-    "requests",
-    "dnspython",
-    "rich"
+license = { text = "MIT" }
+authors = [{ name = "STYXHQ" }]
+keywords = [
+    "security",
+    "reconnaissance",
+    "http",
+    "tls",
+    "dns",
+    "cors",
+    "cookies",
+    "cli",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+]
+dependencies = [
+    "requests>=2.31,<3",
+    "dnspython>=2.4,<3",
+    "rich>=13,<16",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7,<10"]
+
+[project.urls]
+Homepage = "https://github.com/raxwqx/styxscan"
+Repository = "https://github.com/raxwqx/styxscan"
+Issues = "https://github.com/raxwqx/styxscan/issues"
 
 [project.scripts]
 styxscan = "styxscan.cli:main"
 
+[tool.setuptools.packages.find]
+include = ["styxscan*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-
-
+addopts = "-ra"
