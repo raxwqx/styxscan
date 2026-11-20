@@ -230,3 +230,65 @@ def test_fetch_redirect_history_multiple(monkeypatch):
 
     assert result["status"] == 200
     assert result["url"] == "https://example.com/"
+
+
+def test_fetch_truncates_large_body(monkeypatch):
+    class FakeResponse:
+        status_code = 200
+        url = "https://example.com/"
+        headers = {"Content-Type": "text/html"}
+        history = []
+        encoding = "utf-8"
+
+        def iter_content(self, chunk_size=8192):
+            yield b"a" * 10
+            yield b"b" * 10
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: FakeResponse())
+
+    result = fetch("https://example.com", max_body=15)
+
+    assert result["content"] == "a" * 10 + "b" * 5
+    assert result["content_truncated"] is True
+    assert result["content_type"] == "text/html"
+
+
+def test_fetch_detects_https_downgrade(monkeypatch):
+    class FakeHistory:
+        status_code = 301
+        url = "https://example.com"
+
+    class FakeResponse:
+        status_code = 200
+        url = "http://example.com/"
+        headers = {}
+        history = [FakeHistory()]
+        text = "<html></html>"
+
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: FakeResponse())
+
+    result = fetch("https://example.com")
+
+    assert result["scheme_downgrade"] is True
+
+
+def test_fetch_does_not_flag_https_upgrade(monkeypatch):
+    class FakeHistory:
+        status_code = 301
+        url = "http://example.com"
+
+    class FakeResponse:
+        status_code = 200
+        url = "https://example.com/"
+        headers = {}
+        history = [FakeHistory()]
+        text = "<html></html>"
+
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: FakeResponse())
+
+    result = fetch("http://example.com")
+
+    assert result["scheme_downgrade"] is False

@@ -222,3 +222,50 @@ def test_multiple_html_technologies():
     assert "WordPress" in names
     assert "Bootstrap" in names
     assert "jQuery" in names
+
+
+def test_common_words_do_not_trigger_frontend_fingerprints():
+    result = analyze(
+        {
+            "headers": {},
+            "content": (
+                "<html><body>"
+                "The value of the reaction is evaluated by angular momentum."
+                "</body></html>"
+            ),
+        }
+    )
+
+    names = [tech["name"] for tech in result["technologies"]]
+
+    assert "Vue.js" not in names
+    assert "React" not in names
+    assert "Angular" not in names
+
+
+def test_non_html_content_is_not_scanned():
+    result = analyze(
+        {
+            "headers": {},
+            "content_type": "application/json",
+            "content": '{"library": "jquery", "framework": "react"}',
+        }
+    )
+
+    assert result["technologies"] == []
+
+
+def test_technologies_are_deduplicated():
+    result = analyze(
+        {
+            "headers": {},
+            "content": (
+                "<link href='/wp-content/a.css'>"
+                "<link href='/wp-includes/b.css'>"
+            ),
+        }
+    )
+
+    names = [tech["name"] for tech in result["technologies"]]
+
+    assert names.count("WordPress") == 1
